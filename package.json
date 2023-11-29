@@ -58,6 +58,7 @@
     "dids": "^3.2.0",
     "eth-typed-data": "^0.1.0-beta.0",
     "ethers": "^5.7.2",
+    "ethers-eip712": "^0.2.0",
     "exec": "^0.2.1",
     "gql-query-builder": "^3.8.0",
     "graphiql": "^2.2.0",

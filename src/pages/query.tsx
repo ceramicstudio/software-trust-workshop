@@ -90,9 +90,71 @@ query VerifiableCredentialsAll {
 }
 `;
 
+const verifiableCredentialQuery1 = 
+`
+query AccountTrustEIP712 {
+  accountTrustCredential712Index(last: 1) {
+    edges {
+      node {
+        credentialSubject {
+          id {
+            id
+          }
+          trustworthiness {
+            type
+            level
+            scope
+            reason
+          }
+        }
+        issuanceDate
+        proof {
+          verificationMethod
+          created
+          proofPurpose
+          type
+          proofValue
+          eip712 {
+            domain {
+              chainId
+              name
+              version
+            }
+            types {
+              EIP712Domain {
+                name
+                type
+              }
+              CredentialSchema {
+                name
+                type
+              }
+              CredentialSubject {
+                name
+                type
+              }
+              Proof {
+                name
+                type
+              }
+              VerifiableCredential {
+                name
+                type
+              }
+            }
+            primaryType
+          }
+        }
+      }
+    }
+  }
+}
+`;
+
   const Queries = {
     values: [
-      {title: `First 10 Verifiable Credentials`, query: verifiableCredentialQuery},
+      {query: verifiableCredentialQuery},
+      {query: verifiableCredentialQuery1},
     ]
   }
 

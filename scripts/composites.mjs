@@ -12,7 +12,7 @@ import { Ed25519Provider } from "key-did-provider-ed25519";
 import { getResolver } from "key-did-resolver";
 import { fromString } from "uint8arrays/from-string";
 
-const ceramic = new CeramicClient('http://localhost:7007');
+const ceramic = new CeramicClient("http://localhost:7007");
 
 /**
  * @param {import("ora").Ora} spinner - to provide progress status.
@@ -22,13 +22,16 @@ export const writeComposite = async (spinner) => {
   await authenticate();
   spinner.info("writing composite to Ceramic");
 
-  const verifiableCredentialComposite = await createComposite(
+  const typesComposite = await createComposite(
     //@ts-ignore
     ceramic,
-    "./composites/00-verifiableCredential.graphql"
+    "./composites/00-types.graphql"
   );
 
-  await writeEncodedComposite(verifiableCredentialComposite, "./src/__generated__/definition.json");
+  const composite = Composite.from([typesComposite]);
+
+  await writeEncodedComposite(composite, "./src/__generated__/definition.json");
+
   spinner.info("creating composite for runtime usage");
   await writeEncodedCompositeRuntime(
     //@ts-ignore
@@ -62,5 +65,6 @@ const authenticate = async () => {
     provider: new Ed25519Provider(key),
   });
   await did.authenticate();
+  // @ts-ignore
   ceramic.did = did;
 };

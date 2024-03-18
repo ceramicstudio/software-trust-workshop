@@ -35,6 +35,7 @@
     "@meeco/sd-jwt": "^0.0.3",
     "@meeco/sd-jwt-vc": "^0.0.6",
     "@reclaimprotocol/reclaim-client-sdk": "^0.0.10",
+    "@stablelib/sha256": "^1.0.1",
     "@t3-oss/env-nextjs": "^0.6.0",
     "@veramo/cli": "^5.5.3",
     "@veramo/core": "^5.1.2",

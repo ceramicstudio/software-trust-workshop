@@ -4,11 +4,14 @@ import styles from "./index.module.css";
 import Credential from "../components/VC712";
 import type { NextPage } from "next";
 import { useEffect, useState } from "react";
-import {  useAccount } from "wagmi";
+import { useAccount } from "wagmi";
+import useStore from "../../zustand/store";
+import TextareaAutosize from "react-textarea-autosize";
 
 const Home: NextPage = () => {
   const [loggedIn, setLoggedIn] = useState(false);
   const { address, isDisconnected } = useAccount();
+  const { endpoint, setEndpoint } = useStore();
 
   useEffect(() => {
     if (address) {
@@ -26,7 +29,17 @@ const Home: NextPage = () => {
       </Head>
       {loggedIn ? (
         <main className={styles.main}>
+          <p className="text-2xl font-bold text-white">ComposeDB Endpoint</p>
+          <TextareaAutosize
+            className="resize-none w-1/2 h-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base mb-4"
+            placeholder="Scope (e.g. 'Software Development') - REQUIRED"
+            value={endpoint}
+            onChange={(e: any) => {
+              setEndpoint(e.target.value)
+            }}
+          />
           <Credential />
+          {/* {endpoint !== "http://localhost:7007" && <Credential />} */}
         </main>
       ) : (
         <main className={styles.main}></main>

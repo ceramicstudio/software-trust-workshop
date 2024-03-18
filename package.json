@@ -74,7 +74,8 @@
     "vc-js": "^0.6.4",
     "viem": "^1.12.2",
     "wagmi": "^1.4.2",
-    "zod": "^3.21.4"
+    "zod": "^3.21.4",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@composedb/types": "^0.7.0",

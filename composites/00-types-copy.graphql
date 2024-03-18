@@ -1,0 +1,93 @@
+################## Account Trust Credentials
+type AccountTrustSignal
+  @createModel(accountRelation: SET, accountRelationFields: ["recipient"], description: "An account trust signal")
+  @createIndex(fields: [{ path: "recipient" }])
+  @createIndex(fields: [{ path: "issuanceDate" }]) {
+  issuer: DID! @documentAccount
+  recipient: DID! @accountReference
+  issuanceDate: DateTime!
+  trustWorthiness: [AccountTrustTypes!]! @list(maxLength: 1000)
+  proof: String! @string(maxLength: 10000)
+}
+
+################## Software Security Credentials
+type SecurityAudit
+  @createModel(accountRelation: SET, accountRelationFields: ["subjectId"], description: "A security audit")
+  @createIndex(fields: [{ path: "subjectId" }])
+  @createIndex(fields: [{ path: "issuanceDate" }])
+  @createIndex(fields: [{ path: "securityStatus" }]) {
+  issuer: DID! @documentAccount
+  subjectId: String! @string(maxLength: 1000)
+  issuanceDate: DateTime!
+  securityStatus: Boolean!
+  securityFindings: [Findings!]! @list(maxLength: 1000)
+  proof: String! @immutable @string(maxLength: 10000)
+  reviews: [AuditReview] @relationFrom(model: "AuditReview", property: "auditId")
+}
+
+################## Endorsement and Dispute Credentials
+type AuditReview
+  @createModel(accountRelation: SET, accountRelationFields: ["auditId"], description: "An audit review")
+  @createIndex(fields: [{ path: "auditId" }])
+  @createIndex(fields: [{ path: "endorsedStatus" }]) {
+  issuer: DID! @documentAccount
+  issuanceDate: DateTime!
+  auditId: StreamID! @documentReference(model: "SecurityAudit")
+  audit: SecurityAudit! @relationDocument(property: "auditId")
+  endorsedStatus: Boolean!
+  reason: [String!]! @string(maxLength: 1000) @list(maxLength: 1000)
+  proof: String! @immutable @string(maxLength: 10000)
+}
+
+################## Trust Scores
+type PeerTrustScore
+  @createModel(accountRelation: LIST, description: "A peer trust score")
+  @createIndex(fields: [{ path: "recipient" }])
+  @createIndex(fields: [{ path: "issuanceDate" }])
+  @createIndex(fields: [{ path: "trustScoreType" }]) {
+  issuer: DID! @documentAccount
+  recipient: DID! @accountReference
+  issuanceDate: DateTime!
+  trustScore: TrustScore! 
+  trustScoreType: String! @string(maxLength: 1000)
+  proof: String! @string(maxLength: 10000)
+}
+
+type SoftwareTrustScore
+  @createModel(accountRelation: LIST, description: "A software trust score")
+  @createIndex(fields: [{ path: "subjectId" }])
+  @createIndex(fields: [{ path: "issuanceDate" }])
+  @createIndex(fields: [{ path: "trustScoreType" }]) {
+  issuer: DID! @documentAccount
+  subjectId: String! @string(maxLength: 1000)
+  issuanceDate: DateTime!
+  trustScore: TrustScore! 
+  trustScoreType: String! @string(maxLength: 1000)
+  proof: String! @string(maxLength: 10000)
+}
+
+################## Types
+
+type AccountTrustTypes {
+  scope: String! @string(maxLength: 1000)
+  level: Float! 
+  reason: [String] @string(maxLength: 1000) @list(maxLength: 100)
+}
+
+type AccountTrustSubject
+{
+  id: DID! @accountReference
+  trustworthiness: [AccountTrustTypes!]! @list(maxLength: 100)
+}
+
+type Findings {
+  criticality: Float! 
+  type: String! @string(maxLength: 1000)
+  description: String @string(maxLength: 1000)
+  lang: String! @string(maxLength: 2)
+}
+
+type TrustScore {
+  confidence: Float! @float(min: 0, max: 1)
+  value: Float! @float(min: 0, max: 1)
+}

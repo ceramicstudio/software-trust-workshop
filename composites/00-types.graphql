@@ -7,7 +7,6 @@ type AccountTrustSignal
   recipient: DID! @accountReference
   issuanceDate: DateTime!
   trustWorthiness: [AccountTrustTypes!]! @list(maxLength: 1000)
-  proof: String! @string(maxLength: 10000)
 }
 
 ################## Software Security Credentials
@@ -21,7 +20,6 @@ type SecurityAudit
   issuanceDate: DateTime!
   securityStatus: Boolean!
   securityFindings: [Findings!]! @list(maxLength: 1000)
-  proof: String! @immutable @string(maxLength: 10000)
   reviews: [AuditReview] @relationFrom(model: "AuditReview", property: "auditId")
 }
 
@@ -36,7 +34,6 @@ type AuditReview
   audit: SecurityAudit! @relationDocument(property: "auditId")
   endorsedStatus: Boolean!
   reason: [String!]! @string(maxLength: 1000) @list(maxLength: 1000)
-  proof: String! @immutable @string(maxLength: 10000)
 }
 
 ################## Trust Scores
@@ -50,7 +47,6 @@ type PeerTrustScore
   issuanceDate: DateTime!
   trustScore: TrustScore! 
   trustScoreType: String! @string(maxLength: 1000)
-  proof: String! @string(maxLength: 10000)
 }
 
 type SoftwareTrustScore
@@ -63,7 +59,6 @@ type SoftwareTrustScore
   issuanceDate: DateTime!
   trustScore: TrustScore! 
   trustScoreType: String! @string(maxLength: 1000)
-  proof: String! @string(maxLength: 10000)
 }
 
 ################## Types

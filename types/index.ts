@@ -21,7 +21,6 @@ export interface Message extends Post {
 }
 
 export interface TrustType {
-  type: string;
   scope: string;
   level: string;
   reason?: string[];

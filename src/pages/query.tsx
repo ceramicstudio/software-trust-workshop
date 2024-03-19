@@ -8,13 +8,13 @@ import { useAccount } from "wagmi";
 import { GraphiQL } from "graphiql";
 import { definition } from "../__generated__/definition.js";
 import { ComposeClient } from "@composedb/client";
-import { useComposeDB } from "../fragments";
+import useStore from "../../zustand/store";
 import "graphiql/graphiql.min.css";
 
 const Home: NextPage = () => {
   const [loggedIn, setLoggedIn] = useState(false);
   const { address, isDisconnected } = useAccount();
-  const { compose } = useComposeDB();
+  const { compose } = useStore();
 
   const verifiableCredentialQuery = 
 `

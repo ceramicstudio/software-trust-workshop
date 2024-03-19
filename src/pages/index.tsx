@@ -7,17 +7,26 @@ import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import useStore from "../../zustand/store";
 import TextareaAutosize from "react-textarea-autosize";
+import { useWalletClient } from 'wagmi'
+import { CeramicClient } from "@ceramicnetwork/http-client";
+import { ComposeClient } from "@composedb/client";
+import { definition } from "../__generated__/definition.js";
+import {RuntimeCompositeDefinition} from "@composedb/types";
 
 const Home: NextPage = () => {
   const [loggedIn, setLoggedIn] = useState(false);
   const { address, isDisconnected } = useAccount();
-  const { endpoint, setEndpoint } = useStore();
+  const {endpoint, setEndpoint, compose, setCompose, client} = useStore();
+  const { data: walletClient, isError, isLoading } = useWalletClient()
 
   useEffect(() => {
     if (address) {
       setLoggedIn(true);
+      if (walletClient && loggedIn) {
+        setCompose(walletClient, compose, client);
+      }
     }
-  }, [address]);
+  }, [address, walletClient]);
 
   return (
     <>
@@ -36,6 +45,14 @@ const Home: NextPage = () => {
             value={endpoint}
             onChange={(e: any) => {
               setEndpoint(e.target.value)
+              const client = new CeramicClient(e.target.value);
+              const composeDB = new ComposeClient({
+                ceramic: client,
+                definition: definition as RuntimeCompositeDefinition,
+              });
+              if (walletClient) {
+                setCompose(walletClient, composeDB, client);
+              }
             }}
           />
           <Credential />

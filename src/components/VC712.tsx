@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { CopyBlock, dracula } from "react-code-blocks";
-import { useComposeDB } from "../fragments";
 import TextareaAutosize from "react-textarea-autosize";
 import { TrustType } from "types";
+import useStore from "../../zustand/store";
 
 const Credential = () => {
   const [cred, setCred] = useState<string>(
@@ -14,8 +14,7 @@ const Credential = () => {
   const [reason, setReason] = useState<string[]>([]);
   const [reasons, setReasons] = useState<number>(0);
   const [trust, setTrust] = useState<TrustType[]>([]);
-
-  const { compose } = useComposeDB();
+  const {endpoint, setEndpoint, compose, setCompose} = useStore();
 
   const createCredential = async () => {
     if (!recipient) {

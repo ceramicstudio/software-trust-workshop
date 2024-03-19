@@ -22,23 +22,23 @@ export const writeComposite = async (spinner) => {
   await authenticate();
   spinner.info("writing composite to Ceramic");
 
-  const typesComposite = await createComposite(
-    //@ts-ignore
-    ceramic,
-    "./composites/00-types.graphql"
-  );
+  // const typesComposite = await createComposite(
+  //   //@ts-ignore
+  //   ceramic,
+  //   "./composites/00-types.graphql"
+  // );
 
-  const composite = Composite.from([typesComposite]);
+  // const composite = Composite.from([typesComposite]);
 
-  await writeEncodedComposite(composite, "./src/__generated__/definition.json");
+  // await writeEncodedComposite(composite, "./src/__generated__/definition.json");
 
-  spinner.info("creating composite for runtime usage");
-  await writeEncodedCompositeRuntime(
-    //@ts-ignore
-    ceramic,
-    "./src/__generated__/definition.json",
-    "./src/__generated__/definition.js"
-  );
+  // spinner.info("creating composite for runtime usage");
+  // await writeEncodedCompositeRuntime(
+  //   //@ts-ignore
+  //   ceramic,
+  //   "./src/__generated__/definition.json",
+  //   "./src/__generated__/definition.js"
+  // );
   spinner.info("deploying composite");
   const deployComposite = await readEncodedComposite(
     //@ts-ignore

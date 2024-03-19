@@ -1,5 +1,4 @@
 import { createWeb3Modal, defaultWagmiConfig } from '@web3modal/wagmi/react'
-import {ComposeDB} from "../fragments";
 import type { AppProps } from 'next/app'
 import { WagmiConfig } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
@@ -16,9 +15,7 @@ createWeb3Modal({ wagmiConfig, projectId: PROJECT_ID, chains })
 const MyApp = ({ Component, pageProps }: AppProps) => {
   return (
     <WagmiConfig config={wagmiConfig}>
-    <ComposeDB>
-      <Component {...pageProps} ceramic />
-      </ComposeDB>
+      <Component {...pageProps}  />
     </WagmiConfig>
   );
 }

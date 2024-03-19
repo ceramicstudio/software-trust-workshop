@@ -6,7 +6,7 @@ import type { NextPage } from "next";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { GraphiQL } from "graphiql";
-import { definition } from "../__generated__/definition.js";
+import { useWalletClient } from 'wagmi'
 import { ComposeClient } from "@composedb/client";
 import useStore from "../../zustand/store";
 import "graphiql/graphiql.min.css";
@@ -14,7 +14,8 @@ import "graphiql/graphiql.min.css";
 const Home: NextPage = () => {
   const [loggedIn, setLoggedIn] = useState(false);
   const { address, isDisconnected } = useAccount();
-  const { compose } = useStore();
+  const {endpoint, setEndpoint, compose, setCompose, client} = useStore();
+  const { data: walletClient, isError, isLoading } = useWalletClient()
 
   const verifiableCredentialQuery = 
 `
@@ -96,7 +97,7 @@ mutation CreateAuditReview {
   setAuditReview(input: {
     content: {
       issuanceDate: "2021-10-01T00:00:00Z"
-      auditId: "<fill in>"
+      auditId: "k2t6wzhkhabz35kkf19ur2cbedu9xil4lhx76hs7zjxvypc4d19mh65skv5w5i"
       endorsedStatus: true
       reason: ["Scam", "Phishing"]
     }
@@ -181,8 +182,11 @@ mutation CreatePeerTrustScore {
   useEffect(() => {
     if (address) {
       setLoggedIn(true);
+      if (walletClient && loggedIn) {
+        setCompose(walletClient, compose, client);
+      }
     }
-  }, [address]);
+  }, [address, walletClient]);
 
   return (
     <>

@@ -9,6 +9,10 @@ import { GraphiQL } from "graphiql";
 import { useWalletClient } from 'wagmi'
 import { ComposeClient } from "@composedb/client";
 import useStore from "../../zustand/store";
+import TextareaAutosize from "react-textarea-autosize";
+import { CeramicClient } from "@ceramicnetwork/http-client";
+import { definition } from "../__generated__/definition.js";
+import {RuntimeCompositeDefinition} from "@composedb/types";
 import "graphiql/graphiql.min.css";
 
 const Home: NextPage = () => {
@@ -224,6 +228,25 @@ query CombineFilters {
         <main className={styles.main}>
           {loggedIn && (
             <div style={{ height: "60rem", width: "90%", margin: "auto" }}>
+              <p className="text-2xl font-bold text-white">
+                ComposeDB Endpoint
+              </p>
+              <TextareaAutosize
+                className="resize-none w-1/2 h-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base mb-4"
+                placeholder="Scope (e.g. 'Software Development') - REQUIRED"
+                value={endpoint}
+                onChange={(e: any) => {
+                  setEndpoint(e.target.value);
+                  const client = new CeramicClient(e.target.value);
+                  const composeDB = new ComposeClient({
+                    ceramic: client,
+                    definition: definition as RuntimeCompositeDefinition,
+                  });
+                  if (walletClient) {
+                    setCompose(walletClient, composeDB, client);
+                  }
+                }}
+              />
                 {/* @ts-ignore */}
               <GraphiQL fetcher={fetcher} storage={null} defaultTabs={Queries.values}/>
             </div>

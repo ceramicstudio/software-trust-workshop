@@ -51,7 +51,7 @@ const StartAuth = async (
 };
 
 const useStore = create<Store>((set) => ({
-  endpoint: "https://ceramic-demo.hirenodes.io",
+  endpoint: "http://137.184.2.2:7007",
   setEndpoint: (newEndpoint) =>
     set((state) => ({
       endpoint: newEndpoint,
@@ -67,9 +67,9 @@ const useStore = create<Store>((set) => ({
       compose: auth,
     }));
   },
-  client: new CeramicClient("https://ceramic-demo.hirenodes.io"),
+  client: new CeramicClient("http://137.184.2.2:7007"),
   compose: new ComposeClient({
-    ceramic: new CeramicClient("https://ceramic-demo.hirenodes.io"),
+    ceramic: new CeramicClient("http://137.184.2.2:7007"),
     definition: definition as RuntimeCompositeDefinition,
   }),
 }));

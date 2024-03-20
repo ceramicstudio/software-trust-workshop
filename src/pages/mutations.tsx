@@ -6,19 +6,22 @@ import type { NextPage } from "next";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { GraphiQL } from "graphiql";
-import { useWalletClient } from 'wagmi'
+import { useWalletClient } from "wagmi";
 import { ComposeClient } from "@composedb/client";
 import useStore from "../../zustand/store";
+import TextareaAutosize from "react-textarea-autosize";
+import { CeramicClient } from "@ceramicnetwork/http-client";
+import { definition } from "../__generated__/definition.js";
+import { RuntimeCompositeDefinition } from "@composedb/types";
 import "graphiql/graphiql.min.css";
 
 const Home: NextPage = () => {
   const [loggedIn, setLoggedIn] = useState(false);
   const { address, isDisconnected } = useAccount();
-  const {endpoint, setEndpoint, compose, setCompose, client} = useStore();
-  const { data: walletClient, isError, isLoading } = useWalletClient()
+  const { endpoint, setEndpoint, compose, setCompose, client } = useStore();
+  const { data: walletClient, isError, isLoading } = useWalletClient();
 
-  const verifiableCredentialQuery = 
-`
+  const verifiableCredentialQuery = `
 mutation CreateAccountTrustSignal {
   setAccountTrustSignal(input: {
     content: {
@@ -53,8 +56,7 @@ mutation CreateAccountTrustSignal {
 }
 `;
 
-const verifiableCredentialQuery1 = 
-`
+  const verifiableCredentialQuery1 = `
 mutation CreateSecurityAudit {
   setSecurityAudit(input: {
     content: {
@@ -91,8 +93,7 @@ mutation CreateSecurityAudit {
 }
 `;
 
-const verifiableCredentialQuery2 = 
-`
+  const verifiableCredentialQuery2 = `
 mutation CreateAuditReview {
   setAuditReview(input: {
     content: {
@@ -128,8 +129,7 @@ mutation CreateAuditReview {
 }
 `;
 
-const verifiableCredentialQuery3 = 
-`
+  const verifiableCredentialQuery3 = `
 mutation CreatePeerTrustScore {
   createPeerTrustScore(input: {
     content: {
@@ -161,12 +161,12 @@ mutation CreatePeerTrustScore {
 
   const Queries = {
     values: [
-      {query: verifiableCredentialQuery},
-      {query: verifiableCredentialQuery1},
-      {query: verifiableCredentialQuery2},
-      {query: verifiableCredentialQuery3}
-    ]
-  }
+      { query: verifiableCredentialQuery },
+      { query: verifiableCredentialQuery1 },
+      { query: verifiableCredentialQuery2 },
+      { query: verifiableCredentialQuery3 },
+    ],
+  };
 
   const fetcher = async (graphQLParams: Record<string, any>) => {
     const composeClient = compose as ComposeClient;
@@ -200,8 +200,27 @@ mutation CreatePeerTrustScore {
         <main className={styles.main}>
           {loggedIn && (
             <div style={{ height: "60rem", width: "90%", margin: "auto" }}>
-                {/* @ts-ignore */}
-              <GraphiQL fetcher={fetcher} storage={null} defaultTabs={Queries.values}/>
+              <p className="text-2xl font-bold text-white">
+                ComposeDB Endpoint
+              </p>
+              <TextareaAutosize
+                className="resize-none w-1/2 h-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base mb-4"
+                placeholder="Scope (e.g. 'Software Development') - REQUIRED"
+                value={endpoint}
+                onChange={(e: any) => {
+                  setEndpoint(e.target.value);
+                  const client = new CeramicClient(e.target.value);
+                  const composeDB = new ComposeClient({
+                    ceramic: client,
+                    definition: definition as RuntimeCompositeDefinition,
+                  });
+                  if (walletClient) {
+                    setCompose(walletClient, composeDB, client);
+                  }
+                }}
+              />
+               {/* @ts-ignore */}
+               <GraphiQL fetcher={fetcher} storage={null} defaultTabs={Queries.values}/>
             </div>
           )}
         </main>

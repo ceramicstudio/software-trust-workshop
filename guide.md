@@ -61,7 +61,7 @@ sudo cp /Applications/ceramic-one /usr/local/bin/
 ceramic-one daemon
 ```
 
-8. Start js-ceramic with `CERAMIC_RECON_MODE` enabled and pointing to the rust-ceramic instance:
+8. In a new terminal, start js-ceramic with `CERAMIC_RECON_MODE` enabled and pointing to the rust-ceramic instance:
 
 ```bash
 CERAMIC_RECON_MODE="true" ceramic daemon --ipfs-api http://localhost:5001

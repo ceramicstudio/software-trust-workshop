@@ -113,7 +113,7 @@ composedb composite:deploy ./src/__generated__/definition.json
 Finally, you can run a command (like the one below) to manually direct your new node to peer with another node running Rust-Ceramic that is also indexing the same models:
 
 ```bash
-curl -X POST "http://localhost:5001/api/v0/swarm/connect?arg=/ip4/207.246.126.105/tcp/4001/p2p/12D3KooWSNHeQAArDYenHMYsn13x9EkVyQ4jfLhZn6Z7WQ9YS9bq"
+curl -X POST "http://localhost:5001/api/v0/swarm/connect?arg=/ip4/137.184.2.2/tcp/4001/p2p/12D3KooWJqb7KjjcWSC92xcSHhdGUrnJ5FJiTHHdZEW7QaLWG5X3"
 ```
 
 ### Models Walk-Through

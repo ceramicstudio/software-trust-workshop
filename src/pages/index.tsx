@@ -39,6 +39,9 @@ const Home: NextPage = () => {
       {loggedIn ? (
         <main className={styles.main}>
           <p className="text-2xl font-bold text-white">ComposeDB Endpoint</p>
+          <p className="text-1xl text-white">
+                If your local node is running, try replacing with `http://localhost:7007`
+              </p>
           <TextareaAutosize
             className="resize-none w-1/2 h-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base mb-4"
             placeholder="Scope (e.g. 'Software Development') - REQUIRED"

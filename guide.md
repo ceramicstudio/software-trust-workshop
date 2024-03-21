@@ -70,28 +70,47 @@ CERAMIC_RECON_MODE="true" ceramic daemon --ipfs-api http://localhost:5001
 We now have our Ceramic node running on port 7007. In the following steps, we will deploy our composite onto our node.
 
 ## Configure Your Admin DID
+
 In a new terminal in the same root directory as this repository, we can configure an admin DID our node will use in order to deploy our composites. Let's set an environment variable in order to do so:
 
 ```bash
-nvm use 16
+nvm install v16
+nvm use v16
+npm install @composedb/cli
+```
+
+```bash
 composedb did:generate-private-key
 ```
 
-Use the result as an input into the next command:
+This will print out a unique and random private key. We need to get the public key associated with this private key.
+
+Store the private in an environment variable.
 
 ```bash
-composedb did:from-private-key "your key"
+read -s DID_PRIVATE_KEY #paste in the key from the previous command and hit enter
+export DID_PRIVATE_KEY
+```
+
+Now generate the corresponding public key from the private key:
+
+```bash
+composedb did:from-private-key
 ```
 
 On your machine, go into the following directory off your root: `.ceramic`. In your daemon.config.json file, add the did you just added into the `admin-dids` array.
 
+Restart the js-ceramic process for the new config to take effect.
+
+## Deploy the Models
+
 Back in the root directory of this repository you should now be able to deploy the existing composite we previously created previously by running:
 
 ```bash
-composedb composite:deploy ./src/__generated__/definition.json --did-private-key "your key"
+composedb composite:deploy ./src/__generated__/definition.json
 ```
 
-Finally, you can run a command (like the one below) to manually direct your new node to peer with another node running Rust-Ceramic that is also indexing the same models (this will likely require a manual reboot of that node):
+Finally, you can run a command (like the one below) to manually direct your new node to peer with another node running Rust-Ceramic that is also indexing the same models:
 
 ```bash
 curl -X POST "http://localhost:5001/api/v0/swarm/connect?arg=/ip4/207.246.126.105/tcp/4001/p2p/12D3KooWSNHeQAArDYenHMYsn13x9EkVyQ4jfLhZn6Z7WQ9YS9bq"

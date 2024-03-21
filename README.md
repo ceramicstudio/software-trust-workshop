@@ -15,9 +15,11 @@ We will be using this repository for part of our workshop, so let's first clone 
 git clone https://github.com/ceramicstudio/software-trust-workshop && cd software-trust-workshop && npm install
 ```
 
-You can open this repository in your code editor of choice for the second half of this workshop.
+You can open this repository in your code editor of choice for the second half of this workshop. This implementation mimics the Kubo RPC API and relies on https://github.com/ceramicnetwork/js-ceramic for the remaining logic.
 
 ## Node Setup
+This workshop will use our [rust-ceramic](https://github.com/ceramicnetwork/rust-ceramic) implementation
+
 You can find our external Rust-Ceramic instructions [here](https://threebox.notion.site/Ceramic-Recon-instructions-EXTERNAL-c2b93b2648d64cf0af0f4d2489d20399).
 
 Assuming we will all be operating on macs, open a new terminal and:

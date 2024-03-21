@@ -237,12 +237,14 @@ query CombineFilters {
                 value={endpoint}
                 onChange={(e: any) => {
                   setEndpoint(e.target.value);
-                  const client = new CeramicClient(e.target.value);
-                  const composeDB = new ComposeClient({
-                    ceramic: client,
-                    definition: definition as RuntimeCompositeDefinition,
-                  });
+                }}
+                onBlur={() => {
                   if (walletClient) {
+                    const client = new CeramicClient(endpoint);
+                    const composeDB = new ComposeClient({
+                      ceramic: client,
+                      definition: definition as RuntimeCompositeDefinition,
+                    });
                     setCompose(walletClient, composeDB, client);
                   }
                 }}

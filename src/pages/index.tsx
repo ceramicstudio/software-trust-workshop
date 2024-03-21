@@ -7,17 +7,17 @@ import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import useStore from "../../zustand/store";
 import TextareaAutosize from "react-textarea-autosize";
-import { useWalletClient } from 'wagmi'
+import { useWalletClient } from "wagmi";
 import { CeramicClient } from "@ceramicnetwork/http-client";
 import { ComposeClient } from "@composedb/client";
 import { definition } from "../__generated__/definition.js";
-import {RuntimeCompositeDefinition} from "@composedb/types";
+import { RuntimeCompositeDefinition } from "@composedb/types";
 
 const Home: NextPage = () => {
   const [loggedIn, setLoggedIn] = useState(false);
   const { address, isDisconnected } = useAccount();
-  const {endpoint, setEndpoint, compose, setCompose, client} = useStore();
-  const { data: walletClient, isError, isLoading } = useWalletClient()
+  const { endpoint, setEndpoint, compose, setCompose, client } = useStore();
+  const { data: walletClient, isError, isLoading } = useWalletClient();
 
   useEffect(() => {
     if (address) {
@@ -44,13 +44,15 @@ const Home: NextPage = () => {
             placeholder="Scope (e.g. 'Software Development') - REQUIRED"
             value={endpoint}
             onChange={(e: any) => {
-              setEndpoint(e.target.value)
-              const client = new CeramicClient(e.target.value);
-              const composeDB = new ComposeClient({
-                ceramic: client,
-                definition: definition as RuntimeCompositeDefinition,
-              });
+              setEndpoint(e.target.value);
+            }}
+            onBlur={() => {
               if (walletClient) {
+                const client = new CeramicClient(endpoint);
+                const composeDB = new ComposeClient({
+                  ceramic: client,
+                  definition: definition as RuntimeCompositeDefinition,
+                });
                 setCompose(walletClient, composeDB, client);
               }
             }}

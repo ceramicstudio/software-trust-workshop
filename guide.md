@@ -97,7 +97,83 @@ Finally, you can run a command (like the one below) to manually direct your new 
 curl -X POST "http://localhost:5001/api/v0/swarm/connect?arg=/ip4/207.246.126.105/tcp/4001/p2p/12D3KooWSNHeQAArDYenHMYsn13x9EkVyQ4jfLhZn6Z7WQ9YS9bq"
 ```
 
-### Next Steps
+### Models Walk-Through
+
+It was requested that we walk through the user-to-user trust signal data models during this workshop. To that end, here's a quick reminder of an example of the JSON schema mentioned in [capi-261](https://github.com/dayksx/CAIPs/blob/caips-split/CAIPs/caip-261.md):
+
+```json
+"@context": ["https://www.w3.org/2018/credentials/v1"],
+"type": ["VerifiableCredential", "PeerTrustCredential"],
+"issuanceDate": "2024-02-15T07:05:56.273Z",
+"issuer": "did:pkh:eip155:1:0x44dc4E3309B80eF7aBf41C7D0a68F0337a88F044",
+"credentialSubject":
+{
+  "id": "did:pkh:eip155:1:0xfA045B2F2A25ad0B7365010eaf9AC2Dd9905895c",
+  "trustworthiness":
+  [
+    {
+      "scope": "Honesty",
+      "level": 0.5,
+      "reason": ["Alumnus"]
+    },
+    {
+      "scope": "Software development",
+      "level": 1,
+      "reason": ["Software engineer", "Ethereum core developer"]
+    },
+    {
+      "scope": "Software security",
+      "level": 0.5,
+      "reason": ["White Hat", "Smart Contract Auditor"]
+    }
+  ]
+},
+"credentialSchema": [{
+  "id": "ipfs://QmcwYEnLysTyepjjtJw19oTDwuiopbCDbEcCuprCBiL7gl",
+  "type": "JsonSchema"
+},
+"proof": {}
+```
+
+The data model above is in JWT verifiable credential format. Here's how we are thinking about how this translates to ComposeDB:
 
 
+```GraphQL
+################## Account Trust Credentials
+type AccountTrustSignal
+  @createModel(accountRelation: SET, accountRelationFields: ["recipient"], description: "An account trust signal")
+  @createIndex(fields: [{ path: "recipient" }])
+  @createIndex(fields: [{ path: "issuanceDate" }]) {
+  issuer: DID! @documentAccount
+  recipient: DID! @accountReference
+  issuanceDate: DateTime!
+  trustWorthiness: [AccountTrustTypes!]! @list(maxLength: 1000)
+  proof: String! @string(maxLength: 10000)
+}
 
+type AccountTrustTypes {
+  scope: String! @string(maxLength: 1000)
+  level: Float! 
+  reason: [String] @string(maxLength: 1000) @list(maxLength: 100)
+}
+```
+
+**Use of SET**
+
+In ComposeDB, you can define relations between a schema model instance and the Ceramic account that controls that instance in 3 ways - SINGLE, LIST, AND SET. SINGLE requires there only ever be 1 model instance for that schema per account. LIST allows there to be an unlimited number of instances associated with that account. Conversely, SET allows developers to enforce a unique list of instances associated with an account based on a certain subfield (or set of subfields).
+
+In the schema above, by indicating SET with the `accountRelationFields` array set to "recipient", we are ensuring that user A can only create 1 instance that points to user B.
+
+For more information, read our [SET RFC](https://forum.ceramic.network/t/rfc-native-support-for-unique-list-relationships-between-stream-types-and-accounts/1406).
+
+**Use of @createIndex**
+
+The @createIndex directive instructs your ComposeDB node to build an index on the defined field, allowing developers to perform filters and ordering based on those indexes. Note that this does NOT work for embedded objects or enums.
+
+**Issuer**
+
+Any field definition marked as `DID! @documentAccount` will be automatically filled based on the authenticated account creating or updating a model instance (meaning it does not need to be manually inputted).
+
+**Proof**
+
+The plaintext fields in the `AccountTrustSignal` model provides all the information we need to read from directly. However, we've left in the "proof" field to accommodate any portable verified data object - for example, a stringified VC signed by the authenticated user.

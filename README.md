@@ -1,78 +1,256 @@
+# Software Trust System Workshop
+This workshop has been planned to cover a few important topics relevant for the MetaMask and Karma3 Labs teams to get started building most efficiently and rapidly against their spec. In doing so, we have taken the [caip-261](https://github.com/dayksx/CAIPs/blob/main/CAIPs/caip-261.md) spec document into account.
+
+The major themes we will cover are:
+
+1. Guided Ceramic node setup (using Ceramic-One, i.e. our Rust implementation)
+2. ComposeDB data modeling directly relevant to fulfill the spec
+3. Data interactions (querying, mutations, filtering)
+
 ## Getting Started
-This directory contains a simple frontend interface, the Ceramic server configurations, and Ceramic client operations required to create, save, and query AccountTrustCredentials to ComposeDB.
 
-1. Install your dependencies:
-
-Install your dependencies:
+We will be using this repository for part of our workshop, so let's first clone the codebase so we don't have to worry about it later (you will need npm installed):
 
 ```bash
-npm install
+git clone https://github.com/ceramicstudio/software-trust-workshop && cd software-trust-workshop && npm install
 ```
 
-2. Generate your admin seed, admin did, and ComposeDB configuration file:
+You can open this repository in your code editor of choice for the second half of this workshop.
 
-Next, we will need to generate an admin seed and ComposeDB configuration our application will use. This example repository contains a script found at /client/scripts/commands/mjs that generates one for you (preset to run "inmemory" which is ideal for testing).
+## Node Setup
+You can find our external Rust-Ceramic instructions [here](https://threebox.notion.site/Ceramic-Recon-instructions-EXTERNAL-c2b93b2648d64cf0af0f4d2489d20399).
 
-To generate your necessary credentials, run the following in your terminal:
+Assuming we will all be operating on macs, open a new terminal and:
+
+1. Install nvm (if not already installed)
 
 ```bash
-npm run generate
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 ```
 
-3. Finally, run your application in a new terminal (first ensure you are running node v16 in your terminal):
+2. Select node v20:
 
 ```bash
+nvm install v20
+nvm use 20
+```
+
+3. Install js-ceramic (with nighly builds):
+
+```bash
+npm install --location=global @ceramicnetwork/cli@nightly
+```
+
+4. Download Rust-Ceramic from binary distribution:
+
+```bash
+curl -LO https://github.com/ceramicnetwork/rust-ceramic/releases/download/v0.13.0/ceramic-one_aarch64-apple-darwin.tar.gz
+tar zxvf ceramic-one_aarch64-apple-darwin.tar.gz
+```
+
+5. Open Finder, double click the `ceramic-one.pkg` file to start the install
+
+6. After installation, copy the binary:
+
+```bash
+sudo cp /Applications/ceramic-one /usr/local/bin/
+```
+
+7. Start rust-ceramic (must be started first as js-ceramic needs the endpoint on startup):
+
+```bash
+ceramic-one daemon
+```
+
+8. In a new terminal, start js-ceramic with `CERAMIC_RECON_MODE` enabled and pointing to the rust-ceramic instance:
+
+```bash
+nvm use 20
+CERAMIC_RECON_MODE="true" ceramic daemon --ipfs-api http://localhost:5001
+```
+
+We now have our Ceramic node running on port 7007. In the following steps, we will deploy our composite onto our node.
+
+**Troubleshooting** 
+
+If you received error messages, please first ensure that you're running node v20 in the terminals you're running the above commands in. Next, if you've previously ran Ceramic locally, the legacy data from those sessions might also be causing issues. Go into `~/.ceramic` from your machine's root directory (if exists) and delete the `statestore` subdirectory and the `indexing.sqlite` file before trying the commands again.
+
+### Configure Your Admin DID
+
+Back in your code editor's terminal (or a terminal opened to the `software-trust-workshop` directory), configure an admin DID our node will use in order to deploy our composites:
+
+```bash
+nvm install v16
 nvm use 16
+npm install @composedb/cli
+```
+
+```bash
+composedb did:generate-private-key
+```
+
+This will print out a unique and random private key. We need to get the public key associated with this private key.
+
+Store the private in an environment variable.
+
+```bash
+read -s DID_PRIVATE_KEY #paste in the key from the previous command and hit enter
+export DID_PRIVATE_KEY
+```
+
+Now generate the corresponding public key from the private key:
+
+```bash
+composedb did:from-private-key
+```
+
+On your machine, go into the following file off your machine's root: `~/.ceramic/daemon.config.json`. In your daemon.config.json file, add the did you just added into the `admin-dids` array. It should look something like this:
+
+```json
+{
+  "anchor": {},
+  "http-api": {
+    "cors-allowed-origins": [
+      ".*"
+    ],
+    "admin-dids": ["did:key:<your new public key>"]
+  },
+  "ipfs": {
+    "mode": "bundled"
+  },
+  "logger": {
+    "log-level": 2,
+    "log-to-files": false
+  },
+  "network": {
+    "name": "testnet-clay"
+  },
+  "node": {},
+  "state-store": {
+    "mode": "fs",
+    "local-directory": "/Users/<you>/.ceramic/statestore"
+  },
+  "indexing": {
+    "db": "sqlite:///Users/<you>/.ceramic/indexing.sqlite",
+    "allow-queries-before-historical-sync": true,
+    "models": []
+  }
+}
+```
+
+While you have your `~/.ceramic` directory open, delete your `statestore` subfolder, and your `indexing.sqlite` files.
+
+Restart the js-ceramic process for the new config to take effect - go back to the original two terminals you began with, cancel the processes that are running, and re-run steps 7 and 8 above.
+
+### Deploy the Models
+
+Back in the root directory of this repository you should now be able to deploy the existing composite we previously created previously by running:
+
+```bash
+composedb composite:deploy ./src/__generated__/definition.json
+```
+
+Finally, you can run a command (like the one below) to manually direct your new node to peer with another node running Rust-Ceramic that is also indexing the same models:
+
+```bash
+curl -X POST "http://localhost:5001/api/v0/swarm/connect?arg=/ip4/137.184.2.2/tcp/4001/p2p/12D3KooWJqb7KjjcWSC92xcSHhdGUrnJ5FJiTHHdZEW7QaLWG5X3"
+```
+
+## Models Walk-Through
+
+It was requested that we walk through the user-to-user trust signal data models during this workshop. To that end, here's a quick reminder of an example of the JSON schema mentioned in [capi-261](https://github.com/dayksx/CAIPs/blob/caips-split/CAIPs/caip-261.md):
+
+```json
+"@context": ["https://www.w3.org/2018/credentials/v1"],
+"type": ["VerifiableCredential", "PeerTrustCredential"],
+"issuanceDate": "2024-02-15T07:05:56.273Z",
+"issuer": "did:pkh:eip155:1:0x44dc4E3309B80eF7aBf41C7D0a68F0337a88F044",
+"credentialSubject":
+{
+  "id": "did:pkh:eip155:1:0xfA045B2F2A25ad0B7365010eaf9AC2Dd9905895c",
+  "trustworthiness":
+  [
+    {
+      "scope": "Honesty",
+      "level": 0.5,
+      "reason": ["Alumnus"]
+    },
+    {
+      "scope": "Software development",
+      "level": 1,
+      "reason": ["Software engineer", "Ethereum core developer"]
+    },
+    {
+      "scope": "Software security",
+      "level": 0.5,
+      "reason": ["White Hat", "Smart Contract Auditor"]
+    }
+  ]
+},
+"credentialSchema": [{
+  "id": "ipfs://QmcwYEnLysTyepjjtJw19oTDwuiopbCDbEcCuprCBiL7gl",
+  "type": "JsonSchema"
+},
+"proof": {}
+```
+
+The data model above is in JWT verifiable credential format. Here's how we are thinking about how this translates to ComposeDB:
+
+
+```GraphQL
+################## Account Trust Credentials
+type AccountTrustSignal
+  @createModel(accountRelation: SET, accountRelationFields: ["recipient"], description: "An account trust signal")
+  @createIndex(fields: [{ path: "recipient" }])
+  @createIndex(fields: [{ path: "issuanceDate" }]) {
+  issuer: DID! @documentAccount
+  recipient: DID! @accountReference
+  issuanceDate: DateTime!
+  trustWorthiness: [AccountTrustTypes!]! @list(maxLength: 1000)
+  proof: String! @string(maxLength: 10000)
+}
+
+type AccountTrustTypes {
+  scope: String! @string(maxLength: 1000)
+  level: Float! 
+  reason: [String] @string(maxLength: 1000) @list(maxLength: 100)
+}
+```
+
+**Use of SET**
+
+In ComposeDB, you can define relations between a schema model instance and the Ceramic account that controls that instance in 3 ways - SINGLE, LIST, AND SET. SINGLE requires there only ever be 1 model instance for that schema per account. LIST allows there to be an unlimited number of instances associated with that account. Conversely, SET allows developers to enforce a unique list of instances associated with an account based on a certain subfield (or set of subfields).
+
+In the schema above, by indicating SET with the `accountRelationFields` array set to "recipient", we are ensuring that user A can only create 1 instance that points to user B.
+
+For more information, read our [SET RFC](https://forum.ceramic.network/t/rfc-native-support-for-unique-list-relationships-between-stream-types-and-accounts/1406).
+
+**Use of @createIndex**
+
+The @createIndex directive instructs your ComposeDB node to build an index on the defined field, allowing developers to perform filters and ordering based on those indexes. Note that this does NOT work for embedded objects or enums.
+
+**Issuer**
+
+Any field definition marked as `DID! @documentAccount` will be automatically filled based on the authenticated account creating or updating a model instance (meaning it does not need to be manually inputted).
+
+**Proof**
+
+The plaintext fields in the `AccountTrustSignal` model provides all the information we need to read from directly. However, we've left in the "proof" field to accommodate any portable verified data object - for example, a stringified VC signed by the authenticated user.
+
+## Running Queries in the Application UI
+
+We've set up this repository so you can run some queries to an existing production node that's indexing the models found in `/composites`, as well as running queries to your local node running on localhost:7007 (which you'll be able to toggle manually).
+
+From the root of this repository (`/software-trust-system`) start your application in developer mode:
+
+```bash
 npm run dev
 ```
 
-If you explore your composedb.config.json and admin_seed.txt files, you will now see a defined JSON ComposeDB server configuration and Ceramic admin seed, respectively.
+You can now open your browser to http://localhost:3000/.
 
-## Observe Your Schema Definitions
+Under the "ComposeDB Endpoint" you will see that an external cloud node endpoint has already been provided to you. Go ahead and fill in the fields below. Once you've added at least 1 trustworthiness item, you should be able to issue a credential.
 
-The schemas outlined above are located [here](./composites/00-verifiableCredential.graphql).
+Go ahead and issue a credential with the default node endpoint given to you. 
 
-While there are a variety of different ways to compile data models into a composite and deploy on a local node, this repository outlines one opinionated way, found in /scripts/composites.mjs. When you launch the application, this script compiles the models into a composite definition that will then be deployed on your local node, and write those definitions to the files located in /src/__generated__, which will later be used by the ComposeDB client library to read and write data.
-
-Deploying your models onto your node each time you run the application is only relevant for local testing. Once using a production node, your models will already be deployed on your Ceramic node, and you will simply need the canonical runtime definition to cast onto your node.
-
-## Interacting with the UI
-If you have been following along up until this point, you should be able to access the UI in your browser on port 3000. Go ahead and connect your wallet using the Web3Modal:
-
-<div style={{textAlign: 'center'}}>
-
-![vc playground](/static/vc-playground.png)
-
-</div>
-
-The code for this section can be found in the [VC712 component](./src/components/VC712.tsx).
-
-You can follow the directions on the screen to:
-
-1. Input a recipient address
-2. Create as many "Trustworthiness" entries for a given address as you'd like (with or without the optional `reason` array field)
-3. When ready, issue your credential
-
-You can observe how our ComposeDB client is available on the `compose` object after calling the `useComposeDB` method (imported from [this fragment](./src/fragments/index.tsx)) - this authentication method checks and authenticates our browser wallet by creating an authenticated DID session based on our parent DID:pkh. This fragment also imports our runtime definition and casts it on our ComposeDB client (line 24), thus making our schema definitions available to query and write. 
-
-If you check your localStorage, you should also now see a `DID` key-value pair that resulted from this SIWE + Ceramic authentication flow.
-
-Finally, back in the [VC712 component](./src/components/VC712.tsx), observe how we execute a mutation query using the `AccountTrustCredential712` type
-
-### Query Page
-
-If you visit http://localhost:3000/query, you can interact with an in-browser GraphIQL instance. Observe how we're first querying based on the `VerifiableCredential` broad interface, but have the ability to query based on the super granular `AccountTrustCredential712` type. This shows how our queries can support multiple entrypoints.
-
-You can conversely query in the opposite direction (granular --> broad). 
-
-## Learn More
-
-To learn more about Ceramic please visit the following links
-
-- [Ceramic Documentation](https://developers.ceramic.network/learn/welcome/) - Learn more about the Ceramic Ecosystem.
-- [ComposeDB](https://composedb.js.org/) - Details on how to use and develop with ComposeDB!
-- [AI Chatbot on ComposeDB](https://learnweb3.io/lessons/build-an-ai-chatbot-on-compose-db-and-the-ceramic-network) - Build an AI-powered Chatbot and save message history to ComposeDB
-- [ComposeDB API Sandbox](https://developers.ceramic.network/sandbox) - Test GraphQL queries against a live dataset directly from your browser
-- [Ceramic Blog](https://blog.ceramic.network/) - Browse technical tutorials and more on our blog
-- [Ceramic Discord](https://discord.com/invite/ceramic) - Join the Ceramic Discord
-- [Follow Ceramic on Twitter](https://twitter.com/ceramicnetwork) - Follow us on Twitter for latest announcements!
+Navigate to `http://localhost:3000/reads` where we can verify that it synced to our node. With your local node still running, replace the value under the "ComposeDB Endpoint" text with `http://localhost:7007`. Next, if you run the default query within the `GetAccountTrustSignals` tab, you should be able to see the document you just created within the set of returned documents.

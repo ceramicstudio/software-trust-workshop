@@ -26,7 +26,7 @@ const Home: NextPage = () => {
 query GetAccountTrustSignals {
   accountTrustSignalIndex(
     filters: {where: {issuanceDate: {greaterThan: "2024-03-19T15:46:25.910Z"}}}
-    first: 10
+    first: 20
   ) {
     edges {
       node {

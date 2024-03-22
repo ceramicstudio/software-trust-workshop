@@ -98,7 +98,7 @@ mutation CreateAuditReview {
   setAuditReview(input: {
     content: {
       issuanceDate: "2021-10-01T00:00:00Z"
-      auditId: "k2t6wzhkhabz35kkf19ur2cbedu9xil4lhx76hs7zjxvypc4d19mh65skv5w5i"
+      auditId: "<FILL IN WITH REAL AUDIT STREAMID>"
       endorsedStatus: true
       reason: ["Scam", "Phishing"]
     }

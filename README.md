@@ -92,9 +92,8 @@ If you received error messages, please first ensure that you're running node v20
 Back in your code editor's terminal (or a terminal opened to the `software-trust-workshop` directory), configure an admin DID our node will use in order to deploy our composites:
 
 ```bash
-nvm install v16
-nvm use 16
-npm install @composedb/cli
+nvm use 20
+npm install -g @composedb/cli
 ```
 
 ```bash

@@ -169,6 +169,8 @@ curl -X POST "http://localhost:5001/api/v0/swarm/connect?arg=/ip4/137.184.2.2/tc
 
 It was requested that we walk through the user-to-user trust signal data models during this workshop. To that end, here's a quick reminder of an example of the JSON schema mentioned in [capi-261](https://github.com/dayksx/CAIPs/blob/caips-split/CAIPs/caip-261.md):
 
+### User-to-User Signals
+
 ```json
 "@context": ["https://www.w3.org/2018/credentials/v1"],
 "type": ["VerifiableCredential", "PeerTrustCredential"],
@@ -246,6 +248,127 @@ Any field definition marked as `DID! @documentAccount` will be automatically fil
 
 The plaintext fields in the `AccountTrustSignal` model provides all the information we need to read from directly. However, we've left in the "proof" field to accommodate any portable verified data object - for example, a stringified VC signed by the authenticated user.
 
+### User-to-Software Audit Signals
+
+Original JSON representation example:
+
+```json
+"id": "ipfs://QmPTqvH3vm6qcZSGqAUsq78MQa9Ctb56afRZg1WJ5sKLiu",
+"type": ["VerifiableCredential", "SecurityReportCredential"],
+"issuanceDate": "2024-02-15T07:05:56.273Z",
+"issuer": "did:pkh:eth:0x44dc4E3309B80eF7aBf41C7D0a68F0337a88F044",
+"credentialSubject":
+{
+  "id": "snap://CLwZocaUEbDErtQAsybaudZDJq65a8AwlEFgkGUpmAQ=",
+  "securityStatus": "Unsecured",
+  "securityFindings": [
+    {
+      "criticality": 1,
+      "type": "Key leak",
+      "description": "`snap_getBip44Entropy` makes the parent key accessible"
+      "lang": "en"
+    },
+    {
+      "criticality": 0.5,
+      "type": "Buffer Overflow"
+    },
+    {
+      "criticality": 0.25,
+      "type": "Phishing"
+    },
+    {
+      "criticality": 0,
+      "type": "Data leak",
+      "description": "API can communicate data to a centralized server"
+    },
+  ]
+},
+"proof": {}
+```
+
+ComposeDB interpretation:
+
+```GraphQL
+type SecurityAudit
+  @createModel(accountRelation: SET, accountRelationFields: ["subjectId"], description: "A security audit")
+  @createIndex(fields: [{ path: "subjectId" }])
+  @createIndex(fields: [{ path: "issuanceDate" }])
+  @createIndex(fields: [{ path: "securityStatus" }]) {
+  issuer: DID! @documentAccount
+  subjectId: String! @string(maxLength: 1000)
+  issuanceDate: DateTime!
+  securityStatus: Boolean!
+  securityFindings: [Findings!]! @list(maxLength: 1000)
+  proof: String! @immutable @string(maxLength: 10000)
+  reviews: [AuditReview] @relationFrom(model: "AuditReview", property: "auditId")
+}
+
+type Findings {
+  criticality: Float! 
+  type: String! @string(maxLength: 1000)
+  description: String @string(maxLength: 1000)
+  lang: String! @string(maxLength: 2)
+}
+```
+
+**Use of SET**
+
+It's highly relevant here for us to limit 1 security audit an account can issue against any 1 software verion. In this case, we've represented the identifier for a snap as `subjectId` (for example, "snap://CLwZocaUEbDErtQAsybaudZDJq65a8AwlEFgkGUpmAQ=").
+
+**Use of @immutable**
+
+Since our system will allow users to generate reviews of audits, we want to ensure that the values of those audits don't change over time (thus nullifying reviews that point to those audits). It's unreasonable to expect users to constantly keep watch across audits they've left reviews for to ensure they don't change over time, so we want some assurances that they won't change.
+
+In this case, since we're assuming that the `proof` subfield would contain a stringified signed object (like a VC), we've identified this field as immutable, which means it cannot change after it's been initially set. Given that there's a "!" following the scalar type (String), GraphQL will not allow any model instance creation query to go through without this field filled in.
+
+This implementation would require some client-side work to verify that the VC matches the values in the ComposeDB fields. Another solution could enforce locking of the entire document, if desired.
+
+**Relation to AuditReview**
+
+In the next section we will observe the `AuditReview` schema definition (which can only ever be created in relation to a specific `SecurityAudit` instance). This means that developers will be able to query based on the relationship between an `AuditReview` and the `SecurityAudit` it references, in addition to the opposite direction (`AuditReviews` associated with a specific `SecurityAudit`).
+
+### User-to-Audit Review Signals
+
+Original JSON representation example:
+
+```json
+"type": ["VerifiableCredential", "ReviewCredential"],
+"issuanceDate": "2024-02-15T07:05:56.273Z",
+"issuer": "did:pkh:eth:0x44dc4E3309B80eF7aBf41C7D0a68F0337a88F044",
+"credentialSubject":
+{
+  "id": "ipfs://QmPTqvH3vm6qcZSGqAUsq78MQa9Ctb56afRZg1WJ5sKLiu",
+  "currentStatus": "Disputed",
+  "reason": ["Missed Vulnerability"],
+},
+"proof": {}
+```
+
+ComposeDB interpretation:
+
+```GraphQL
+type AuditReview
+  @createModel(accountRelation: SET, accountRelationFields: ["auditId"], description: "An audit review")
+  @createIndex(fields: [{ path: "auditId" }])
+  @createIndex(fields: [{ path: "endorsedStatus" }]) {
+  issuer: DID! @documentAccount
+  issuanceDate: DateTime!
+  auditId: StreamID! @documentReference(model: "SecurityAudit")
+  audit: SecurityAudit! @relationDocument(property: "auditId")
+  endorsedStatus: Boolean!
+  reason: [String!]! @string(maxLength: 1000) @list(maxLength: 1000)
+  proof: String! @immutable @string(maxLength: 10000)
+}
+```
+
+**Use of SET**
+
+We want to make sure an account can only ever create 1 review per specific audit.
+
+**Relation Back to SecurityAudit**
+
+We've defined a relationship between the `AuditReview` and `SecurityAudit` schemas such that the `auditId` subfield must intake a Stream ID scalar that is a model instance document of a `SecurityAudit`. The `audit` subfield below it exposes that node for querying based on an `AuditReview` as the entrypoint. This is also what allows us to expose querying to all `AuditReview` instances from within a `SecurityAudit`.
+
 ## Running Queries in the Application UI
 
 We've set up this repository so you can run some queries to an existing production node that's indexing the models found in `/composites`, as well as running queries to your local node running on localhost:7007 (which you'll be able to toggle manually).
@@ -263,3 +386,5 @@ Under the "ComposeDB Endpoint" you will see that an external cloud node endpoint
 Go ahead and issue a credential with the default node endpoint given to you. 
 
 Navigate to `http://localhost:3000/reads` where we can verify that it synced to our node. With your local node still running, replace the value under the "ComposeDB Endpoint" text with `http://localhost:7007`. Next, if you run the default query within the `GetAccountTrustSignals` tab, you should be able to see the document you just created within the set of returned documents.
+
+Finally, you can navigate to `http://localhost:3000/mutations` to explore additional pre-made queries we've constructed across the other schemas.

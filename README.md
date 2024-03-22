@@ -149,9 +149,7 @@ On your machine, go into the following file off your machine's root: `~/.ceramic
 }
 ```
 
-While you have your `~/.ceramic` directory open, delete your `statestore` subfolder, and your `indexing.sqlite` files.
-
-Restart the js-ceramic process for the new config to take effect - go back to the original two terminals you began with, cancel the processes that are running, and re-run steps 7 and 8 above.
+Restart the js-ceramic process for the new config to take effect - go back to the original two terminals you began with, cancel the processes that are running, and re-run steps 6 above (which restarts the js-ceramic process - you can keep the rust-ceramic process running).
 
 ### Deploy the Models
 

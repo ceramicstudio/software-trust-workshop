@@ -45,26 +45,36 @@ npm install --location=global @ceramicnetwork/cli@nightly
 
 4. Download Rust-Ceramic from binary distribution:
 
+#### MacOS
+
 ```bash
 curl -LO https://github.com/ceramicnetwork/rust-ceramic/releases/download/v0.13.0/ceramic-one_aarch64-apple-darwin.tar.gz
 tar zxvf ceramic-one_aarch64-apple-darwin.tar.gz
 ```
 
-5. Open Finder, double click the `ceramic-one.pkg` file to start the install
+Open Finder, double click the `ceramic-one.pkg` file to start the install
 
-6. After installation, copy the binary:
+ After installation, copy the binary:
 
 ```bash
 sudo cp /Applications/ceramic-one /usr/local/bin/
 ```
 
-7. Start rust-ceramic (must be started first as js-ceramic needs the endpoint on startup):
+#### Linux
+
+```bash
+curl -LO https://github.com/ceramicnetwork/rust-ceramic/releases/download/v0.13.0/ceramic-one_x86_64-unknown-linux-gnu.tar.gz
+tar zxvf ceramic-one_x86_64-unknown-linux-gnu.tar.gz
+dpkg -i ceramic-one.deb
+```
+
+5. Start rust-ceramic (must be started first as js-ceramic needs the endpoint on startup):
 
 ```bash
 ceramic-one daemon
 ```
 
-8. In a new terminal, start js-ceramic with `CERAMIC_RECON_MODE` enabled and pointing to the rust-ceramic instance:
+6. In a new terminal, start js-ceramic with `CERAMIC_RECON_MODE` enabled and pointing to the rust-ceramic instance:
 
 ```bash
 nvm use 20
